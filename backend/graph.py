@@ -3,16 +3,21 @@ def build_action_graph(result):
     nodes = []
     edges = []
 
+    # Store task IDs for each person
     task_nodes = {}
 
-    # -------------------------
-    # Create task and person nodes
-    # -------------------------
+    # =========================================================
+    # 1. CREATE PERSON, TASK AND DEADLINE NODES
+    # =========================================================
 
     for index, action in enumerate(result["actions"], start=1):
 
         person_id = f"person_{index}"
         task_id = f"task_{index}"
+
+        # -----------------------------------------------------
+        # PERSON NODE
+        # -----------------------------------------------------
 
         nodes.append({
             "id": person_id,
@@ -20,11 +25,19 @@ def build_action_graph(result):
             "label": action["person"]
         })
 
+        # -----------------------------------------------------
+        # TASK NODE
+        # -----------------------------------------------------
+
         nodes.append({
             "id": task_id,
             "type": "task",
             "label": action["task"]
         })
+
+        # -----------------------------------------------------
+        # PERSON -> TASK
+        # -----------------------------------------------------
 
         edges.append({
             "source": person_id,
@@ -32,11 +45,12 @@ def build_action_graph(result):
             "relationship": "ASSIGNED_TO"
         })
 
-        task_nodes[action["person"]] = task_id
+        # Save task ID using person's name
+        task_nodes[action["person"].lower()] = task_id
 
-        # -------------------------
-        # Deadline node
-        # -------------------------
+        # -----------------------------------------------------
+        # DEADLINE NODE
+        # -----------------------------------------------------
 
         if action["deadline"]:
 
@@ -54,27 +68,68 @@ def build_action_graph(result):
                 "relationship": "DUE_BY"
             })
 
-    # -------------------------
-    # Dependency relationships
-    # -------------------------
+    # =========================================================
+    # 2. CREATE DEPENDENCY RELATIONSHIPS
+    # =========================================================
 
     for index, action in enumerate(result["actions"], start=1):
 
         dependency = action["dependency"]
 
-        if dependency:
+        if not dependency:
+            continue
 
-            current_task_id = f"task_{index}"
+        current_task_id = f"task_{index}"
 
-            for person, task_id in task_nodes.items():
+        dependency_lower = dependency.lower()
 
-                if person.lower() in dependency.lower():
+        # Find the person mentioned in the dependency
+        for person, task_id in task_nodes.items():
+
+            if person in dependency_lower:
+
+                # Don't create a task pointing to itself
+                if task_id != current_task_id:
 
                     edges.append({
                         "source": task_id,
                         "target": current_task_id,
                         "relationship": "BLOCKS"
                     })
+
+                break
+
+    # =========================================================
+    # 3. CREATE DECISION NODES
+    # =========================================================
+
+    for index, decision in enumerate(result["decisions"], start=1):
+
+        decision_id = f"decision_{index}"
+
+        nodes.append({
+            "id": decision_id,
+            "type": "decision",
+            "label": decision["decision"]
+        })
+
+    # =========================================================
+    # 4. CREATE RISK NODES
+    # =========================================================
+
+    for index, risk in enumerate(result["risks"], start=1):
+
+        risk_id = f"risk_{index}"
+
+        nodes.append({
+            "id": risk_id,
+            "type": "risk",
+            "label": risk["risk"]
+        })
+
+    # =========================================================
+    # 5. RETURN COMPLETE GRAPH
+    # =========================================================
 
     return {
         "nodes": nodes,

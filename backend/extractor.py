@@ -7,6 +7,7 @@ def extract_actions(transcript: str):
     decisions = []
     risks = []
 
+    # Split transcript into individual sentences
     sentences = re.split(r"[.!?]", transcript)
 
     for sentence in sentences:
@@ -18,18 +19,30 @@ def extract_actions(transcript: str):
 
         lower_sentence = sentence.lower()
 
-        # ==========================================
+        # =====================================================
         # TASK EXTRACTION
-        # ==========================================
+        # =====================================================
 
         task_patterns = [
-            r"([A-Z][a-z]+)\s+will\s+(.+)",
-            r"([A-Z][a-z]+)\s+needs\s+to\s+(.+)",
-            r"([A-Z][a-z]+)\s+should\s+(.+)",
-            r"([A-Z][a-z]+)\s+is\s+responsible\s+for\s+(.+)"
-        ]
 
-        matched_task = False
+            # Rahul will complete the API
+            r"([A-Z][a-z]+)\s+will\s+(.+)",
+
+            # Rahul needs to complete the API
+            r"([A-Z][a-z]+)\s+needs\s+to\s+(.+)",
+
+            # Rahul should complete the API
+            r"([A-Z][a-z]+)\s+should\s+(.+)",
+
+            # Rahul is responsible for testing
+            r"([A-Z][a-z]+)\s+is\s+responsible\s+for\s+(.+)",
+
+            # Rahul has to complete the API
+            r"([A-Z][a-z]+)\s+has\s+to\s+(.+)",
+
+            # Rahul must complete the API
+            r"([A-Z][a-z]+)\s+must\s+(.+)"
+        ]
 
         for pattern in task_patterns:
 
@@ -39,27 +52,37 @@ def extract_actions(transcript: str):
 
                 person = match.group(1)
 
+                # Keep the complete sentence as the task
                 task = sentence
 
-                # ----------------------------------
-                # Deadline
-                # ----------------------------------
+                # =================================================
+                # DEADLINE EXTRACTION
+                # =================================================
 
                 deadline_match = re.search(
-                    r"\b(by|before|until)\s+([A-Za-z0-9]+)",
+                    r"\b(by|before|until)\s+"
+                    r"((?:next\s+)?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)"
+                    r"|(?:next\s+)?(?:week|month)"
+                    r"|tomorrow|today"
+                    r"|\d{1,2}(?:st|nd|rd|th)?\s+"
+                    r"(?:January|February|March|April|May|June|July|August|September|October|November|December)"
+                    r"|(?:January|February|March|April|May|June|July|August|September|October|November|December)"
+                    r"\s+\d{1,2}(?:st|nd|rd|th)?)",
                     sentence,
                     re.IGNORECASE
                 )
 
-                deadline = (
-                    deadline_match.group(2)
-                    if deadline_match
-                    else None
-                )
+                if deadline_match:
 
-                # ----------------------------------
-                # Dependency
-                # ----------------------------------
+                    deadline = deadline_match.group(2)
+
+                else:
+
+                    deadline = None
+
+                # =================================================
+                # DEPENDENCY EXTRACTION
+                # =================================================
 
                 dependency = None
 
@@ -73,6 +96,10 @@ def extract_actions(transcript: str):
 
                     dependency = dependency_match.group(1).strip()
 
+                # =================================================
+                # STORE ACTION
+                # =================================================
+
                 actions.append({
                     "person": person,
                     "task": task,
@@ -80,28 +107,27 @@ def extract_actions(transcript: str):
                     "dependency": dependency
                 })
 
-                matched_task = True
-
                 break
 
-        # ==========================================
+        # =====================================================
         # DECISION EXTRACTION
-        # ==========================================
+        # =====================================================
 
         if (
             "decided to" in lower_sentence
             or "decided" in lower_sentence
             or "agreed to" in lower_sentence
             or "agreed on" in lower_sentence
+            or "agreed to use" in lower_sentence
         ):
 
             decisions.append({
                 "decision": sentence
             })
 
-        # ==========================================
+        # =====================================================
         # RISK EXTRACTION
-        # ==========================================
+        # =====================================================
 
         if (
             "risk" in lower_sentence
@@ -109,11 +135,17 @@ def extract_actions(transcript: str):
             or "may be" in lower_sentence
             or "could be" in lower_sentence
             or "possible delay" in lower_sentence
+            or "may be delayed" in lower_sentence
+            or "might be delayed" in lower_sentence
         ):
 
             risks.append({
                 "risk": sentence
             })
+
+    # =========================================================
+    # FINAL RESULT
+    # =========================================================
 
     return {
         "actions": actions,

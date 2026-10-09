@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-
 import {
   ReactFlow,
-  Background,
+  MiniMap,
   Controls,
-  MiniMap
+  Background,
 } from "@xyflow/react";
 
 import "@xyflow/react/dist/style.css";
@@ -14,65 +13,95 @@ import "./App.css";
 
 function App() {
 
+  // =========================================================
+  // STATE
+  // =========================================================
+
   const [title, setTitle] = useState("");
+
   const [transcript, setTranscript] = useState("");
 
-  const [result, setResult] = useState(null);
-  const [graphData, setGraphData] = useState(null);
+  const [result, setResult] = useState({
+    actions: [],
+    decisions: [],
+    risks: [],
+  });
+
+  const [graphData, setGraphData] = useState({
+    nodes: [],
+    edges: [],
+  });
+
+  const [meetingHistory, setMeetingHistory] = useState([]);
 
   const [loading, setLoading] = useState(false);
 
+  const [message, setMessage] = useState("");
 
-  // ==========================================
-  // Analyze Meeting
-  // ==========================================
+  const [error, setError] = useState("");
 
-  const analyzeMeeting = async () => {
 
-    if (!title || !transcript) {
-      alert("Please enter meeting title and transcript.");
-      return;
-    }
+  // =========================================================
+  // LOAD MEETING HISTORY FROM BACKEND
+  // =========================================================
 
-    setLoading(true);
+  useEffect(() => {
 
-    try {
+    const loadMeetingHistory = async () => {
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/meetings",
-        {
-          title: title,
-          transcript: transcript
+      try {
+
+        const response = await axios.get(
+          "http://127.0.0.1:8000/meetings"
+        );
+
+        setMeetingHistory(response.data);
+
+      } catch (error) {
+
+        console.error(
+          "Failed to load meeting history:",
+          error
+        );
+
+        if (error.response) {
+
+          setError(
+            "Unable to load meeting history from the server."
+          );
+
+        } else if (error.request) {
+
+          setError(
+            "Cannot connect to the backend. Make sure FastAPI is running."
+          );
+
+        } else {
+
+          setError(
+            "Something went wrong while loading meeting history."
+          );
+
         }
-      );
 
-      console.log("Backend Response:", response.data);
+      }
 
-      setResult(response.data);
+    };
 
-      setGraphData(response.data.graph);
+    loadMeetingHistory();
 
-    } catch (error) {
-
-      console.error("Backend Error:", error);
-
-      alert(
-        "Could not connect to the ActionGraph backend."
-      );
-
-    }
-
-    setLoading(false);
-  };
+  }, []);
 
 
-  // ==========================================
-  // Load Sample Meeting
-  // ==========================================
+  // =========================================================
+  // LOAD SAMPLE MEETING
+  // =========================================================
 
   const loadSampleMeeting = () => {
 
-    setTitle("Product Development Meeting");
+    setTitle(
+      "Project Planning Meeting"
+    );
 
     setTranscript(
       "Rahul will complete the backend API by Friday. " +
@@ -82,182 +111,749 @@ function App() {
       "There is a risk that testing may be delayed."
     );
 
+    setMessage("");
+
+    setError("");
+
   };
 
 
-  // ==========================================
-  // Create React Flow Nodes
-  // ==========================================
+  // =========================================================
+  // CLEAR CURRENT MEETING
+  // =========================================================
 
-  const flowNodes = graphData
-    ? graphData.nodes.map((node, index) => {
+  const clearMeeting = () => {
 
-        let backgroundColor = "#ffffff";
-        let borderColor = "#2563eb";
+    setTitle("");
 
-        if (node.type === "person") {
-          backgroundColor = "#e0f2fe";
-          borderColor = "#0284c7";
+    setTranscript("");
+
+    setResult({
+      actions: [],
+      decisions: [],
+      risks: [],
+    });
+
+    setGraphData({
+      nodes: [],
+      edges: [],
+    });
+
+    setMessage("");
+
+    setError("");
+
+  };
+
+
+  // =========================================================
+  // ANALYZE MEETING
+  // =========================================================
+
+  const analyzeMeeting = async () => {
+
+    // -------------------------------------------------------
+    // Frontend validation
+    // -------------------------------------------------------
+
+    if (!title.trim()) {
+
+      setError(
+        "Please enter a meeting title."
+      );
+
+      return;
+
+    }
+
+
+    if (!transcript.trim()) {
+
+      setError(
+        "Please enter a meeting transcript."
+      );
+
+      return;
+
+    }
+
+
+    setLoading(true);
+
+    setMessage("");
+
+    setError("");
+
+
+    try {
+
+      // -----------------------------------------------------
+      // Send meeting to FastAPI
+      // -----------------------------------------------------
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/meetings",
+        {
+          title: title,
+          transcript: transcript,
+        }
+      );
+
+
+      // -----------------------------------------------------
+      // Store analysis result
+      // -----------------------------------------------------
+
+      setResult({
+
+        actions:
+          response.data.actions,
+
+        decisions:
+          response.data.decisions,
+
+        risks:
+          response.data.risks,
+
+      });
+
+
+      // -----------------------------------------------------
+      // Store graph
+      // -----------------------------------------------------
+
+      setGraphData(
+        response.data.graph
+      );
+
+
+      // -----------------------------------------------------
+      // Create history item
+      // -----------------------------------------------------
+
+      const historyItem = {
+
+        id:
+          response.data.id,
+
+        title:
+          response.data.title,
+
+        transcript:
+          transcript,
+
+        actions:
+          response.data.actions,
+
+        decisions:
+          response.data.decisions,
+
+        risks:
+          response.data.risks,
+
+        graph:
+          response.data.graph,
+
+      };
+
+
+      // -----------------------------------------------------
+      // Add meeting to history
+      // -----------------------------------------------------
+
+      setMeetingHistory(
+        (previousHistory) => {
+
+          return [
+            historyItem,
+            ...previousHistory,
+          ];
+
+        }
+      );
+
+
+      // -----------------------------------------------------
+      // Success message
+      // -----------------------------------------------------
+
+      setMessage(
+        "Meeting processed and saved successfully."
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Meeting analysis error:",
+        error
+      );
+
+
+      // -----------------------------------------------------
+      // SERVER RESPONSE ERROR
+      // -----------------------------------------------------
+
+      if (error.response) {
+
+        if (
+          error.response.status === 422
+        ) {
+
+          setError(
+            "Invalid meeting data. Please check the title and transcript."
+          );
+
         }
 
-        if (node.type === "task") {
-          backgroundColor = "#dcfce7";
-          borderColor = "#16a34a";
+        else if (
+          error.response.status === 404
+        ) {
+
+          setError(
+            "The requested API endpoint was not found."
+          );
+
         }
 
-        if (node.type === "deadline") {
-          backgroundColor = "#fef3c7";
-          borderColor = "#d97706";
+        else if (
+          error.response.status === 500
+        ) {
+
+          setError(
+            "Server error. Please check the FastAPI backend."
+          );
+
         }
 
-        if (node.type === "risk") {
-          backgroundColor = "#fee2e2";
-          borderColor = "#dc2626";
+        else {
+
+          setError(
+            error.response.data?.detail ||
+            "The server returned an error."
+          );
+
         }
 
-        if (node.type === "decision") {
-          backgroundColor = "#ede9fe";
-          borderColor = "#7c3aed";
+      }
+
+      // -----------------------------------------------------
+      // REQUEST SENT BUT NO RESPONSE
+      // -----------------------------------------------------
+
+      else if (error.request) {
+
+        setError(
+          "Cannot connect to the backend. Make sure FastAPI is running."
+        );
+
+      }
+
+      // -----------------------------------------------------
+      // OTHER ERROR
+      // -----------------------------------------------------
+
+      else {
+
+        setError(
+          "Something went wrong. Please try again."
+        );
+
+      }
+
+    }
+
+    finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
+
+  // =========================================================
+  // LOAD MEETING FROM HISTORY
+  // =========================================================
+
+  const loadMeetingFromHistory = (
+    meeting
+  ) => {
+
+    setTitle(
+      meeting.title
+    );
+
+    setTranscript(
+      meeting.transcript || ""
+    );
+
+    setResult({
+
+      actions:
+        meeting.actions || [],
+
+      decisions:
+        meeting.decisions || [],
+
+      risks:
+        meeting.risks || [],
+
+    });
+
+    setGraphData(
+      meeting.graph || {
+        nodes: [],
+        edges: [],
+      }
+    );
+
+    setMessage("");
+
+    setError("");
+
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+  };
+
+
+  // =========================================================
+  // DELETE ONE MEETING
+  // =========================================================
+
+  const deleteMeeting = async (
+    meetingId
+  ) => {
+
+    try {
+
+      await axios.delete(
+        `http://127.0.0.1:8000/meetings/${meetingId}`
+      );
+
+
+      setMeetingHistory(
+        (previousHistory) =>
+          previousHistory.filter(
+            (meeting) =>
+              meeting.id !== meetingId
+          )
+      );
+
+
+      setMessage(
+        "Meeting deleted successfully."
+      );
+
+      setError("");
+
+
+    } catch (error) {
+
+      console.error(
+        "Delete meeting error:",
+        error
+      );
+
+
+      if (error.response) {
+
+        if (
+          error.response.status === 404
+        ) {
+
+          setError(
+            "Meeting was not found in the database."
+          );
+
         }
+
+        else {
+
+          setError(
+            error.response.data?.detail ||
+            "Failed to delete meeting."
+          );
+
+        }
+
+      }
+
+      else if (error.request) {
+
+        setError(
+          "Cannot connect to the backend. Make sure FastAPI is running."
+        );
+
+      }
+
+      else {
+
+        setError(
+          "Something went wrong while deleting the meeting."
+        );
+
+      }
+
+    }
+
+  };
+
+
+  // =========================================================
+  // CLEAR ALL MEETINGS
+  // =========================================================
+
+  const clearAllHistory = async () => {
+
+    try {
+
+      await axios.delete(
+        "http://127.0.0.1:8000/meetings"
+      );
+
+
+      setMeetingHistory([]);
+
+      setMessage(
+        "Meeting history cleared successfully."
+      );
+
+      setError("");
+
+
+    } catch (error) {
+
+      console.error(
+        "Clear history error:",
+        error
+      );
+
+
+      if (error.response) {
+
+        setError(
+          error.response.data?.detail ||
+          "Failed to clear meeting history."
+        );
+
+      }
+
+      else if (error.request) {
+
+        setError(
+          "Cannot connect to the backend. Make sure FastAPI is running."
+        );
+
+      }
+
+      else {
+
+        setError(
+          "Something went wrong while clearing history."
+        );
+
+      }
+
+    }
+
+  };
+
+
+  // =========================================================
+  // CONVERT BACKEND NODES TO REACT FLOW NODES
+  // =========================================================
+
+  const flowNodes =
+    graphData.nodes.map(
+      (node, index) => {
+
+        let backgroundColor =
+          "#ffffff";
+
+        let borderColor =
+          "#374151";
+
+
+        // ---------------------------------------------------
+        // PERSON
+        // ---------------------------------------------------
+
+        if (
+          node.type === "person"
+        ) {
+
+          backgroundColor =
+            "#dbeafe";
+
+          borderColor =
+            "#2563eb";
+
+        }
+
+
+        // ---------------------------------------------------
+        // TASK
+        // ---------------------------------------------------
+
+        else if (
+          node.type === "task"
+        ) {
+
+          backgroundColor =
+            "#dcfce7";
+
+          borderColor =
+            "#16a34a";
+
+        }
+
+
+        // ---------------------------------------------------
+        // DEADLINE
+        // ---------------------------------------------------
+
+        else if (
+          node.type === "deadline"
+        ) {
+
+          backgroundColor =
+            "#ffedd5";
+
+          borderColor =
+            "#ea580c";
+
+        }
+
+
+        // ---------------------------------------------------
+        // DECISION
+        // ---------------------------------------------------
+
+        else if (
+          node.type === "decision"
+        ) {
+
+          backgroundColor =
+            "#f3e8ff";
+
+          borderColor =
+            "#9333ea";
+
+        }
+
+
+        // ---------------------------------------------------
+        // RISK
+        // ---------------------------------------------------
+
+        else if (
+          node.type === "risk"
+        ) {
+
+          backgroundColor =
+            "#fee2e2";
+
+          borderColor =
+            "#dc2626";
+
+        }
+
+
+        // ---------------------------------------------------
+        // GRAPH COLUMN POSITION
+        // ---------------------------------------------------
+
+        let x = 50;
+
+
+        if (
+          node.type === "task"
+        ) {
+
+          x = 350;
+
+        }
+
+        else if (
+          node.type === "deadline"
+        ) {
+
+          x = 700;
+
+        }
+
+        else if (
+          node.type === "decision" ||
+          node.type === "risk"
+        ) {
+
+          x = 1000;
+
+        }
+
+
+        // ---------------------------------------------------
+        // RETURN REACT FLOW NODE
+        // ---------------------------------------------------
 
         return {
 
-          id: node.id,
+          id:
+            node.id,
 
           position: {
-            x: node.type === "person"
-              ? 50
-              : node.type === "task"
-              ? 350
-              : 700,
 
-            y: index * 150
+            x: x,
+
+            y:
+              index * 150,
+
           },
 
           data: {
-            label: (
-              <div
-                style={{
-                  padding: "10px",
-                  minWidth: "160px",
-                  textAlign: "center"
-                }}
-              >
 
-                <strong>
-                  {node.type.toUpperCase()}
-                </strong>
+            label:
+              node.label,
 
-                <br />
-
-                <span>
-                  {node.label}
-                </span>
-
-              </div>
-            )
           },
 
           style: {
-            background: backgroundColor,
-            border: `2px solid ${borderColor}`,
-            borderRadius: "10px",
-            padding: "5px",
-            fontSize: "14px"
-          }
+
+            background:
+              backgroundColor,
+
+            border:
+              `2px solid ${borderColor}`,
+
+            borderRadius:
+              "10px",
+
+            padding:
+              "10px",
+
+            width:
+              230,
+
+            fontSize:
+              "13px",
+
+          },
 
         };
 
-      })
-    : [];
+      }
+    );
 
 
-  // ==========================================
-  // Create React Flow Edges
-  // ==========================================
+  // =========================================================
+  // CONVERT BACKEND EDGES TO REACT FLOW EDGES
+  // =========================================================
 
-  const flowEdges = graphData
-    ? graphData.edges.map((edge, index) => {
+  const flowEdges =
+    graphData.edges.map(
+      (edge, index) => {
 
-        let edgeColor = "#64748b";
+        let strokeColor =
+          "#2563eb";
 
-        if (edge.relationship === "ASSIGNED_TO") {
-          edgeColor = "#0284c7";
+
+        if (
+          edge.relationship ===
+          "DUE_BY"
+        ) {
+
+          strokeColor =
+            "#ea580c";
+
         }
 
-        if (edge.relationship === "DUE_BY") {
-          edgeColor = "#d97706";
+        else if (
+          edge.relationship ===
+          "BLOCKS"
+        ) {
+
+          strokeColor =
+            "#dc2626";
+
         }
 
-        if (edge.relationship === "BLOCKS") {
-          edgeColor = "#dc2626";
-        }
 
         return {
 
-          id: `edge-${index}`,
+          id:
+            `edge-${index}`,
 
-          source: edge.source,
+          source:
+            edge.source,
 
-          target: edge.target,
+          target:
+            edge.target,
 
-          label: edge.relationship,
+          label:
+            edge.relationship,
 
           animated:
-            edge.relationship === "BLOCKS",
+            edge.relationship ===
+            "BLOCKS",
 
           style: {
-            stroke: edgeColor,
-            strokeWidth: 2
+
+            stroke:
+              strokeColor,
+
           },
 
           labelStyle: {
-            fill: edgeColor,
-            fontWeight: 600
-          }
+
+            fontSize:
+              11,
+
+          },
 
         };
 
-      })
-    : [];
+      }
+    );
 
 
-  // ==========================================
-  // Count People
-  // ==========================================
+  // =========================================================
+  // SUMMARY INFORMATION
+  // =========================================================
 
-  const peopleCount = result
-    ? new Set(
-        result.actions.map(
-          (action) => action.person
-        )
-      ).size
-    : 0;
-
-
-  // ==========================================
-  // Count Dependencies
-  // ==========================================
-
-  const dependencyCount = result
-    ? result.actions.filter(
-        (action) => action.dependency
-      ).length
-    : 0;
+  const people = [
+    ...new Set(
+      result.actions.map(
+        (action) =>
+          action.person
+      )
+    ),
+  ];
 
 
-  // ==========================================
-  // UI
-  // ==========================================
+  const dependencies =
+    result.actions.filter(
+      (action) =>
+        action.dependency
+    );
+
+
+  // =========================================================
+  // USER INTERFACE
+  // =========================================================
 
   return (
 
     <div className="app">
 
 
-      {/* ======================================
+      {/* ===================================================
           HEADER
-      ====================================== */}
+      =================================================== */}
 
       <header className="header">
 
@@ -269,22 +865,17 @@ function App() {
           Turn Meetings into Meaningful Action
         </p>
 
-        <span className="header-description">
-          Extract tasks, decisions, deadlines, risks, and dependencies
-          from meeting discussions and visualize them as an action graph.
-        </span>
-
       </header>
 
 
       <main className="container">
 
 
-        {/* ======================================
+        {/* =================================================
             MEETING INPUT
-        ====================================== */}
+        ================================================= */}
 
-        <section className="input-section">
+        <section className="card">
 
           <h2>
             Meeting Analysis
@@ -295,13 +886,21 @@ function App() {
             Meeting Title
           </label>
 
+
           <input
+
             type="text"
-            placeholder="Enter meeting title"
+
             value={title}
-            onChange={(e) =>
-              setTitle(e.target.value)
+
+            onChange={(event) =>
+              setTitle(
+                event.target.value
+              )
             }
+
+            placeholder="Enter meeting title"
+
           />
 
 
@@ -309,166 +908,193 @@ function App() {
             Meeting Transcript
           </label>
 
+
           <textarea
-            placeholder="Paste your meeting transcript here..."
+
             value={transcript}
-            onChange={(e) =>
-              setTranscript(e.target.value)
+
+            onChange={(event) =>
+              setTranscript(
+                event.target.value
+              )
             }
+
+            placeholder="Enter meeting transcript..."
+
             rows="10"
+
           />
 
 
-          <button
-            onClick={analyzeMeeting}
-            disabled={loading}
-          >
-
-            {loading
-              ? "Analyzing..."
-              : "Analyze Meeting"
-            }
-
-          </button>
+          <div className="button-group">
 
 
-          <button
-            className="sample-button"
-            onClick={loadSampleMeeting}
-          >
+            <button
 
-            Load Sample Meeting
+              onClick={
+                analyzeMeeting
+              }
 
-          </button>
+              disabled={
+                loading
+              }
+
+            >
+
+              {loading
+                ? "Analyzing..."
+                : "Analyze Meeting"}
+
+            </button>
 
 
-          <button
-            className="clear-button"
-            onClick={() => {
-              setTitle("");
-              setTranscript("");
-              setResult(null);
-              setGraphData(null);
-            }}
-          >
+            <button
 
-            Clear
+              className="secondary-button"
 
-          </button>
+              onClick={
+                loadSampleMeeting
+              }
+
+            >
+
+              Load Sample Meeting
+
+            </button>
+
+
+            <button
+
+              className="clear-button"
+
+              onClick={
+                clearMeeting
+              }
+
+            >
+
+              Clear
+
+            </button>
+
+
+          </div>
+
+
+          {/* =================================================
+              SUCCESS MESSAGE
+          ================================================= */}
+
+          {message && (
+
+            <div className="success-message">
+
+              {message}
+
+            </div>
+
+          )}
+
+
+          {/* =================================================
+              ERROR MESSAGE
+          ================================================= */}
+
+          {error && (
+
+            <div className="error-message">
+
+              {error}
+
+            </div>
+
+          )}
+
+        </section>
+
+
+        {/* =================================================
+            SUMMARY
+        ================================================= */}
+
+        <section className="summary-grid">
+
+
+          <div className="summary-card">
+
+            <h3>
+              Tasks
+            </h3>
+
+            <strong>
+              {result.actions.length}
+            </strong>
+
+          </div>
+
+
+          <div className="summary-card">
+
+            <h3>
+              People
+            </h3>
+
+            <strong>
+              {people.length}
+            </strong>
+
+          </div>
+
+
+          <div className="summary-card">
+
+            <h3>
+              Decisions
+            </h3>
+
+            <strong>
+              {result.decisions.length}
+            </strong>
+
+          </div>
+
+
+          <div className="summary-card">
+
+            <h3>
+              Risks
+            </h3>
+
+            <strong>
+              {result.risks.length}
+            </strong>
+
+          </div>
+
+
+          <div className="summary-card">
+
+            <h3>
+              Dependencies
+            </h3>
+
+            <strong>
+              {dependencies.length}
+            </strong>
+
+          </div>
 
 
         </section>
 
 
-        {/* ======================================
-            RESULTS
-        ====================================== */}
+        {/* =================================================
+            ACTION ITEMS
+        ================================================= */}
 
-        {result && (
+        {result.actions.length > 0 && (
 
-          <section className="results">
-
-
-            {/* SUCCESS MESSAGE */}
-
-            <div className="success-message">
-              ✅ Meeting analyzed successfully
-            </div>
-
-
-            <h2>
-              Meeting Results
-            </h2>
-
-
-            {/* ==================================
-                SUMMARY CARDS
-            ================================== */}
-
-            <div className="cards">
-
-
-              {/* TASKS */}
-
-              <div className="card">
-
-                <h3>
-                  Tasks
-                </h3>
-
-                <p>
-                  {result.actions.length}
-                </p>
-
-              </div>
-
-
-              {/* PEOPLE */}
-
-              <div className="card">
-
-                <h3>
-                  People
-                </h3>
-
-                <p>
-                  {peopleCount}
-                </p>
-
-              </div>
-
-
-              {/* DECISIONS */}
-
-              <div className="card">
-
-                <h3>
-                  Decisions
-                </h3>
-
-                <p>
-                  {result.decisions.length}
-                </p>
-
-              </div>
-
-
-              {/* RISKS */}
-
-              <div className="card">
-
-                <h3>
-                  Risks
-                </h3>
-
-                <p>
-                  {result.risks.length}
-                </p>
-
-              </div>
-
-
-              {/* DEPENDENCIES */}
-
-              <div className="card">
-
-                <h3>
-                  Dependencies
-                </h3>
-
-                <p>
-                  {dependencyCount}
-                </p>
-
-              </div>
-
-
-            </div>
-
-
-            {/* ==================================
-                ACTION ITEMS
-            ================================== */}
+          <section className="card">
 
             <h2>
               Action Items
@@ -479,197 +1105,387 @@ function App() {
               (action, index) => (
 
                 <div
+
                   className="action-card"
+
                   key={index}
+
                 >
 
                   <h3>
-                    👤 {action.person}
+                    {action.person}
                   </h3>
 
 
                   <p>
-
-                    <strong>
-                      📋 Task:
-                    </strong>{" "}
-
                     {action.task}
-
                   </p>
 
 
-                  <p>
+                  {action.deadline && (
 
-                    <strong>
-                      📅 Deadline:
-                    </strong>{" "}
+                    <p>
 
-                    {action.deadline ||
-                      "Not specified"
-                    }
+                      <strong>
+                        Deadline:
+                      </strong>{" "}
 
-                  </p>
+                      {action.deadline}
+
+                    </p>
+
+                  )}
 
 
-                  <p>
+                  {action.dependency && (
 
-                    <strong>
-                      🔗 Dependency:
-                    </strong>{" "}
+                    <p>
 
-                    {action.dependency ||
-                      "None"
-                    }
+                      <strong>
+                        Depends on:
+                      </strong>{" "}
 
-                  </p>
+                      {action.dependency}
+
+                    </p>
+
+                  )}
 
                 </div>
 
               )
             )}
 
+          </section>
 
-            {/* ==================================
-                DECISIONS
-            ================================== */}
-
-            {result.decisions.length > 0 && (
-
-              <>
-
-                <h2>
-                  Decisions
-                </h2>
+        )}
 
 
-                {result.decisions.map(
-                  (decision, index) => (
+        {/* =================================================
+            DECISIONS
+        ================================================= */}
 
-                    <div
-                      className="action-card"
-                      key={index}
-                    >
+        {result.decisions.length > 0 && (
 
-                      <p>
-                        {decision.decision}
-                      </p>
+          <section className="card">
 
-                    </div>
+            <h2>
+              Decisions
+            </h2>
 
-                  )
-                )}
 
-              </>
+            {result.decisions.map(
+              (decision, index) => (
 
+                <div
+
+                  className="decision-card"
+
+                  key={index}
+
+                >
+
+                  {decision.decision}
+
+                </div>
+
+              )
             )}
 
+          </section>
 
-            {/* ==================================
-                RISKS
-            ================================== */}
-
-            {result.risks.length > 0 && (
-
-              <>
-
-                <h2>
-                  Risks
-                </h2>
+        )}
 
 
-                {result.risks.map(
-                  (risk, index) => (
+        {/* =================================================
+            RISKS
+        ================================================= */}
 
-                    <div
-                      className="action-card"
-                      key={index}
-                    >
+        {result.risks.length > 0 && (
 
-                      <p>
-                        {risk.risk}
-                      </p>
+          <section className="card">
 
-                    </div>
+            <h2>
+              Risks
+            </h2>
 
-                  )
-                )}
 
-              </>
+            {result.risks.map(
+              (risk, index) => (
 
+                <div
+
+                  className="risk-card"
+
+                  key={index}
+
+                >
+
+                  {risk.risk}
+
+                </div>
+
+              )
             )}
 
+          </section>
 
-            {/* ==================================
-                ACTION GRAPH
-            ================================== */}
+        )}
+
+
+        {/* =================================================
+            ACTION GRAPH
+        ================================================= */}
+
+        {flowNodes.length > 0 && (
+
+          <section className="card">
 
             <h2>
               Action Graph
             </h2>
 
 
-            {/* GRAPH LEGEND */}
+            <div className="graph-container">
 
-            <div className="graph-legend">
+              <ReactFlow
 
-              <div>
-                <span className="legend-color person-color"></span>
-                Person
-              </div>
+                nodes={flowNodes}
 
-              <div>
-                <span className="legend-color task-color"></span>
-                Task
-              </div>
+                edges={flowEdges}
 
-              <div>
-                <span className="legend-color deadline-color"></span>
-                Deadline
-              </div>
+                fitView
 
-              <div>
-                <span className="legend-color risk-color"></span>
-                Risk
-              </div>
+              >
 
-              <div>
-                <span className="legend-color decision-color"></span>
-                Decision
-              </div>
+                <Background />
+
+                <Controls />
+
+                <MiniMap />
+
+              </ReactFlow>
 
             </div>
 
 
-            {graphData && (
+            {/* =================================================
+                GRAPH LEGEND
+            ================================================= */}
 
-              <div className="graph-container">
+            <div className="graph-legend">
 
-                <ReactFlow
-                  nodes={flowNodes}
-                  edges={flowEdges}
-                  fitView
-                  fitViewOptions={{
-                    padding: 0.2
-                  }}
-                >
 
-                  <Background />
+              <div>
 
-                  <Controls />
+                <span
+                  className="legend-person"
+                ></span>
 
-                  <MiniMap />
-
-                </ReactFlow>
+                Person
 
               </div>
 
-            )}
+
+              <div>
+
+                <span
+                  className="legend-task"
+                ></span>
+
+                Task
+
+              </div>
+
+
+              <div>
+
+                <span
+                  className="legend-deadline"
+                ></span>
+
+                Deadline
+
+              </div>
+
+
+              <div>
+
+                <span
+                  className="legend-decision"
+                ></span>
+
+                Decision
+
+              </div>
+
+
+              <div>
+
+                <span
+                  className="legend-risk"
+                ></span>
+
+                Risk
+
+              </div>
+
+
+            </div>
 
 
           </section>
 
         )}
+
+
+        {/* =================================================
+            MEETING HISTORY
+        ================================================= */}
+
+        <section className="card">
+
+
+          <div className="history-header">
+
+            <h2>
+              Meeting History
+            </h2>
+
+
+            {meetingHistory.length > 0 && (
+
+              <button
+
+                className="clear-history-button"
+
+                onClick={
+                  clearAllHistory
+                }
+
+              >
+
+                Clear All History
+
+              </button>
+
+            )}
+
+          </div>
+
+
+          {meetingHistory.length === 0 ? (
+
+            <p>
+              No meetings saved yet.
+            </p>
+
+          ) : (
+
+            <div>
+
+
+              {meetingHistory.map(
+                (meeting) => (
+
+                  <div
+
+                    className="history-card"
+
+                    key={meeting.id}
+
+                  >
+
+
+                    <div
+
+                      className="history-content"
+
+                      onClick={() =>
+                        loadMeetingFromHistory(
+                          meeting
+                        )
+                      }
+
+                    >
+
+                      <h3>
+                        {meeting.title}
+                      </h3>
+
+
+                      <div
+                        className="history-details"
+                      >
+
+                        <span>
+
+                          Tasks:{" "}
+
+                          {
+                            meeting.actions?.length ||
+                            0
+                          }
+
+                        </span>
+
+
+                        <span>
+
+                          Decisions:{" "}
+
+                          {
+                            meeting.decisions?.length ||
+                            0
+                          }
+
+                        </span>
+
+
+                        <span>
+
+                          Risks:{" "}
+
+                          {
+                            meeting.risks?.length ||
+                            0
+                          }
+
+                        </span>
+
+                      </div>
+
+                    </div>
+
+
+                    <button
+
+                      className="delete-history-button"
+
+                      onClick={() =>
+                        deleteMeeting(
+                          meeting.id
+                        )
+                      }
+
+                    >
+
+                      Delete
+
+                    </button>
+
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
+          )}
+
+        </section>
+
 
       </main>
 

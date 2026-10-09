@@ -1,17 +1,26 @@
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  color: #1f2937;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .app {
   min-height: 100vh;
 }
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .header {
   background: #111827;
@@ -21,39 +30,61 @@ body {
 }
 
 .header h1 {
-  margin: 0;
-  font-size: 38px;
+  color: white;
+  font-size: 42px;
+  margin: 0 0 8px 0;
+  font-weight: 700;
 }
 
 .header p {
-  margin-top: 10px;
-  font-size: 18px;
+  color: white;
+  font-size: 22px;
+  margin: 0;
+  font-weight: 600;
 }
+
+
+/* =========================================================
+   MAIN CONTAINER
+   ========================================================= */
 
 .container {
-  max-width: 1000px;
+  width: 90%;
+  max-width: 1200px;
   margin: 40px auto;
-  padding: 0 20px;
 }
 
-.input-section,
-.results {
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.card {
   background: white;
-  padding: 30px;
   border-radius: 12px;
-  margin-bottom: 30px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
-.input-section h2,
-.results h2 {
+.card h2 {
   margin-top: 0;
+  margin-bottom: 20px;
+  color: #111827;
+  font-size: 26px;
 }
+
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
 
 label {
   display: block;
-  margin-top: 20px;
+  margin-top: 15px;
   margin-bottom: 8px;
-  font-weight: bold;
+  font-weight: 600;
+  color: #374151;
 }
 
 input,
@@ -62,215 +93,447 @@ textarea {
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 textarea {
   resize: vertical;
+  min-height: 180px;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
 }
 
 button {
-  margin-top: 20px;
-  padding: 13px 25px;
   border: none;
   border-radius: 8px;
+  padding: 11px 18px;
   background: #2563eb;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 button:disabled {
   background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 30px;
-}
-.card {
-  padding: 22px;
-  background: #f3f4f6;
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid #e5e7eb;
+
+/* =========================================================
+   SECONDARY BUTTON
+   ========================================================= */
+
+.secondary-button {
+  background: #16a34a;
 }
 
-.card h3 {
-  margin: 0;
-  font-size: 16px;
-}
 
-.card p {
-  font-size: 32px;
-  font-weight: bold;
-  margin: 10px 0 0;
-}
-.card h3 {
-  margin: 0;
-}
+/* =========================================================
+   CLEAR BUTTON
+   ========================================================= */
 
-.card p {
-  font-size: 30px;
-  font-weight: bold;
-  margin: 10px 0 0;
-}
-.action-card {
-  padding: 20px;
-  margin-bottom: 15px;
-  border-left: 5px solid #2563eb;
-  background: #f9fafb;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.10);
-}
-
-.action-card h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  color: #1e3a8a;
-}
-
-.action-card p {
-  margin: 10px 0;
-  line-height: 1.6;
-}
-.action-card h3 {
-  margin-top: 0;
-}
-.graph-container {
-  width: 100%;
-  height: 600px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  margin-top: 20px;
-  background: #ffffff;
-}
-.sample-button {
-  margin-left: 10px;
+.clear-button {
   background: #6b7280;
 }
+
+
+/* =========================================================
+   SUCCESS / ERROR
+   ========================================================= */
+
 .success-message {
+  margin-top: 18px;
+  padding: 12px 15px;
+  border-radius: 8px;
   background: #dcfce7;
   color: #166534;
   border: 1px solid #86efac;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-weight: bold;
+  font-weight: 600;
 }
-.header-description {
-  display: block;
-  max-width: 700px;
-  margin: 15px auto 0;
-  font-size: 15px;
-  line-height: 1.6;
-  opacity: 0.85;
-}
-@media (max-width: 900px) {
 
-  .cards {
+.error-message {
+  margin-top: 18px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   SUMMARY GRID
+   ========================================================= */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.summary-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+}
+
+.summary-card h3 {
+  margin: 0 0 10px 0;
+  color: #4b5563;
+  font-size: 15px;
+}
+
+.summary-card strong {
+  font-size: 30px;
+  color: #111827;
+}
+
+
+/* =========================================================
+   ACTION CARDS
+   ========================================================= */
+
+.action-card {
+  border: 1px solid #e5e7eb;
+  border-left: 5px solid #16a34a;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 15px;
+  background: #f9fafb;
+  transition: 0.2s;
+}
+
+.action-card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.action-card h3 {
+  margin-top: 0;
+  color: #166534;
+}
+
+.action-card p {
+  color: #374151;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   DECISION CARDS
+   ========================================================= */
+
+.decision-card {
+  background: #f3e8ff;
+  border-left: 5px solid #9333ea;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  color: #581c87;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   RISK CARDS
+   ========================================================= */
+
+.risk-card {
+  background: #fee2e2;
+  border-left: 5px solid #dc2626;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  color: #991b1b;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   GRAPH
+   ========================================================= */
+
+.graph-container {
+  width: 100%;
+  height: 650px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+
+/* =========================================================
+   GRAPH LEGEND
+   ========================================================= */
+
+.graph-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.graph-legend div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.graph-legend span {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  border-radius: 3px;
+}
+
+
+/* =========================================================
+   LEGEND COLORS
+   ========================================================= */
+
+.legend-person {
+  background: #2563eb;
+}
+
+.legend-task {
+  background: #16a34a;
+}
+
+.legend-deadline {
+  background: #ea580c;
+}
+
+.legend-decision {
+  background: #9333ea;
+}
+
+.legend-risk {
+  background: #dc2626;
+}
+
+
+/* =========================================================
+   MEETING HISTORY
+   ========================================================= */
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.history-header h2 {
+  margin-bottom: 0;
+}
+
+.history-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+  transition: 0.2s;
+}
+
+.history-card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.history-content {
+  flex: 1;
+  cursor: pointer;
+}
+
+.history-content h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.history-details {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   DELETE HISTORY BUTTON
+   ========================================================= */
+
+.delete-history-button {
+  background: #dc2626;
+  padding: 9px 14px;
+  font-size: 13px;
+}
+
+.delete-history-button:hover {
+  background: #b91c1c;
+}
+
+
+/* =========================================================
+   CLEAR HISTORY BUTTON
+   ========================================================= */
+
+.clear-history-button {
+  background: #6b7280;
+  white-space: nowrap;
+}
+
+.clear-history-button:hover {
+  background: #4b5563;
+}
+
+
+/* =========================================================
+   REACT FLOW
+   ========================================================= */
+
+.react-flow__node {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.react-flow__edge-text {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+  .summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .header {
+    padding: 28px 15px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .header p {
+    font-size: 18px;
+  }
+
+  .container {
+    width: 94%;
+    margin: 25px auto;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .summary-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+
+  .history-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .history-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .delete-history-button {
+    width: 100%;
+  }
+
+  .clear-history-button {
+    width: 100%;
+  }
+
+  .graph-container {
+    height: 500px;
+  }
+
 }
 
 
-@media (max-width: 600px) {
+@media (max-width: 450px) {
 
-  .container {
-    margin: 20px auto;
-    padding: 0 12px;
-  }
-
-  .input-section,
-  .results {
-    padding: 20px;
-  }
-
-  .cards {
+  .summary-grid {
     grid-template-columns: 1fr;
   }
 
   .header h1 {
-    font-size: 30px;
+    font-size: 28px;
   }
 
   .header p {
     font-size: 16px;
   }
 
-  .header-description {
-    font-size: 14px;
+  .graph-container {
+    height: 450px;
   }
 
-  .sample-button {
-    margin-left: 0;
-  }
-
-}
-.clear-button {
-  margin-left: 10px;
-  background: #dc2626;
-}
-
-.clear-button:hover {
-  background: #b91c1c;
-}
-.graph-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin: 15px 0;
-  padding: 12px 15px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.graph-legend > div {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.legend-color {
-  width: 14px;
-  height: 14px;
-  display: inline-block;
-  border-radius: 4px;
-  border: 1px solid #9ca3af;
-}
-
-.person-color {
-  background: #e0f2fe;
-  border-color: #0284c7;
-}
-
-.task-color {
-  background: #dcfce7;
-  border-color: #16a34a;
-}
-
-.deadline-color {
-  background: #fef3c7;
-  border-color: #d97706;
-}
-
-.risk-color {
-  background: #fee2e2;
-  border-color: #dc2626;
-}
-
-.decision-color {
-  background: #ede9fe;
-  border-color: #7c3aed;
 }
